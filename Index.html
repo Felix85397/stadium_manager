@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Stadium Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d0a0e 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .title {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff0000 0%, #dc143c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #9ca3af;
+            font-size: 1.2rem;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            background: rgba(220, 38, 38, 0.3);
+            color: #ff0000;
+            border-bottom-color: #ff0000;
+        }
+        
+        .tab-content {
+            display: none !important;
+        }
+        
+        .tab-content.active {
+            display: block !important;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card.highlight {
+            border: 2px solid #ff0000;
+        }
+        
+        .stat-label {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff0000;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .control-label {
+            color: #d1d5db;
+            font-weight: 600;
+        }
+        
+        .control-value {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #374151;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff0000;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff0000;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .insight-box {
+            background: rgba(255, 0, 0, 0.1);
+            border-left: 4px solid #ff0000;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 30px;
+            background: #374151;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            margin: 15px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #dc2626);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .progress-bar.success {
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+        }
+        
+        .sector-control {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #374151;
+            margin-bottom: 15px;
+        }
+        
+        .sector-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .sector-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .sector-capacity {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+        
+        .sector-price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff0000;
+        }
+        
+        .sector-attendance {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+        
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        
+        .optimal-label {
+            color: #eab308;
+        }
+        
+        /* Stadium Visualization - ISTOGRAMMA */
+        .stadium-container {
+            margin: 30px 0;
+            padding: 40px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stadium-title {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 2px;
+            color: #fff;
+        }
+        
+        .stadium-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .histogram-container {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 8px;
+            height: 500px;
+            padding: 2px 20px 10px 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+        
+        .histogram-bar {
+            flex: 1;
+            max-width: 100px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            transition: all 0.5s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 8px 10px 8px;
+            min-height: 80px;
+        }
+        
+        .histogram-bar:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Colori barre */
+        .bar-orange { background: linear-gradient(180deg, #f97316 0%, #ea580c 100%); }
+        .bar-red { background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%); }
+        .bar-blue { background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%); }
+        .bar-green { background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%); }
+        .bar-purple { 
+            background: linear-gradient(180deg, #a855f7 0%, #9333ea 100%); 
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
+        }
+        
+        .bar-value {
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+        
+        .bar-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 5px;
+            line-height: 1.2;
+            font-weight: 600;
+        }
+        
+        .stadium-legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .stadium-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stadium-stat {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        
+        .stadium-stat-label {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-bottom: 5px;
+        }
+        
+        .stadium-stat-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ff0000;
+        }
+    </style>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a1a;
+        }
+    </style>
+</head>
+<body>
+    <div id="sign-in-container" style="display: flex; justify-content: center; align-items: center; min-height: 85vh; width: 100%; box-sizing: border-box;"></div>
+    <div id="app-content" style="display: none;">
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Dashboard Stadium Manager</h1>
+            <p class="subtitle">Nuovo Stadio San Siro: Simulatore Strategico & Ticketing</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('scenario')">🏟️ Scenario Nuovo Stadio</button>
+            <button class="tab" onclick="switchTab('ticketing')">🎟️ Gestore Biglietteria</button>
+        </div>
+
+        <!-- TAB SCENARIO -->
+        <div id="scenario-tab" class="tab-content active">
+            <!-- Stadium Visualization -->
+            <div class="panel">
+                <h3 class="panel-title">🏟️ Distribuzione Posti per Settore</h3>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="distribution-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="stadium-stats">
+                <div class="stadium-stat">
+                    <div class="stadium-stat-label">Capacità Totale</div>
+                    <div class="stadium-stat-value" id="stadium-capacity">71.500</div>
+                </div>
+                <div class="stadium-stat">
+                    <div class="stadium-stat-label">Posti VIP</div>
+                    <div class="stadium-stat-value" id="stadium-vip-count">12.870</div>
+                </div>
+                <div class="stadium-stat">
+                    <div class="stadium-stat-label">Posti Standard</div>
+                    <div class="stadium-stat-value" id="stadium-regular-count">58.630</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Ricavo/Partita</div>
+                    <div class="stat-value" id="match-revenue">€0k</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Ticketing Annuale</div>
+                    <div class="stat-value" id="annual-ticketing">€0M</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Naming Rights</div>
+                    <div class="stat-value" id="naming-rights-display">€20M</div>
+                </div>
+                <div class="stat-card highlight">
+                    <div class="stat-label">Totale Annuo</div>
+                    <div class="stat-value" id="total-revenue">€0M</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="panel-title">⚙️ Configurazione Stadio</h3>
+                
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-label">Capacità Totale</span>
+                        <span class="control-value" id="capacity-value">71.500 posti</span>
+                    </div>
+                    <input type="range" class="slider" id="capacity" min="60000" max="85000" step="500" value="71500" oninput="updateScenario()">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-label">% Posti Corporate/VIP</span>
+                        <span class="control-value" id="vip-percentage-value">15%</span>
+                    </div>
+                    <input type="range" class="slider" id="vip-percentage" min="10" max="30" step="1" value="15" oninput="updateScenario()">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-label">Naming Rights Annuali</span>
+                        <span class="control-value" id="naming-rights-value">€20M</span>
+                    </div>
+                    <input type="range" class="slider" id="naming-rights" min="10" max="50" step="5" value="20" oninput="updateScenario()">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-label">Numero Partite Casalinghe</span>
+                        <span class="control-value" id="home-matches-value">27 partite</span>
+                    </div>
+                    <input type="range" class="slider" id="home-matches" min="20" max="29" step="1" value="27" oninput="updateScenario()">
+                </div>
+
+                <h4 style="color: #d1d5db; margin-top: 30px; margin-bottom: 20px; font-size: 1.2rem;">
+                    Prezzi Medi Settori (Partite Standard)
+                </h4>
+
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <div class="control-header">
+                            <span class="control-label">Curve</span>
+                            <span class="control-value" id="price-curve-value">€30</span>
+                        </div>
+                        <input type="range" class="slider" id="price-curve" min="15" max="60" step="5" value="30" oninput="updateScenario()">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-header">
+                            <span class="control-label">Distinti</span>
+                            <span class="control-value" id="price-distinti-value">€50</span>
+                        </div>
+                        <input type="range" class="slider" id="price-distinti" min="30" max="100" step="5" value="50" oninput="updateScenario()">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-header">
+                            <span class="control-label">Tribune</span>
+                            <span class="control-value" id="price-tribune-value">€80</span>
+                        </div>
+                        <input type="range" class="slider" id="price-tribune" min="50" max="150" step="10" value="80" oninput="updateScenario()">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-header">
+                            <span class="control-label">VIP/Corporate</span>
+                            <span class="control-value" id="price-vip-value">€150</span>
+                        </div>
+                        <input type="range" class="slider" id="price-vip" min="100" max="300" step="10" value="150" oninput="updateScenario()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="panel-title">📊 Confronto Stadi Europei al 30/06/2025</h3>
+                <div class="chart-container">
+                    <canvas id="scenario-chart"></canvas>
+                </div>
+                <p style="color: #9ca3af; font-size: 0.85rem; text-align: center; margin-top: 15px; font-style: italic;">
+                    Nota: incassi relativi al solo ticketing (non il dato aggregato che include pure servizi da matchday come food, beverage, ecc).
+                </p>
+            </div>
+
+            <div class="insight-box" id="scenario-insights">
+                <div style="font-weight: bold; margin-bottom: 10px;">💡 Insights Strategici</div>
+                <div id="insights-content"></div>
+            </div>
+        </div>
+
+        <!-- TAB TICKETING -->
+        <div id="ticketing-tab" class="tab-content">
+            
+            <div class="panel" id="record-panel">
+                <h3 class="panel-title">🏆 Obiettivo: Battere il Record di Milan-Inter, semifinale di andata Champions League 2022/23</h3>
+                <p style="color: #9ca3af; margin-bottom: 15px;">Record storico: €10,4M</p>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar" style="width: 0%">0%</div>
+                </div>
+                <p id="record-message" style="display: none; color: #22c55e; font-weight: bold; text-align: center; margin-top: 10px;">🎉 RECORD BATTUTO!</p>
+            </div>
+
+            <div class="panel" id="record-panel-2">
+                <h3 class="panel-title">🏆 Obiettivo: Battere il Record di Inter-Barcellona, semifinale di ritorno Champions League 2024/25</h3>
+                <p style="color: #9ca3af; margin-bottom: 15px;">Record storico: €14,7M</p>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar-2" style="width: 0%">0%</div>
+                </div>
+                <p id="record-message-2" style="display: none; color: #22c55e; font-weight: bold; text-align: center; margin-top: 10px;">🎉 RECORD BATTUTO!</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card highlight">
+                    <div class="stat-label">Incasso Totale</div>
+                    <div class="stat-value" id="ticket-total">€0M</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Affluenza Media</div>
+                    <div class="stat-value" id="ticket-attendance">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Spettatori</div>
+                    <div class="stat-value" id="ticket-spectators">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Prezzo Medio</div>
+                    <div class="stat-value" id="ticket-avg-price">€0</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="panel-title">💰 Pricing Big Match</h3>
+
+                <div class="sector-control">
+                    <div class="sector-header">
+                        <div>
+                            <div class="sector-name">Secondo Anello Curve (Verde/Blu)</div>
+                            <div class="sector-capacity">16.000 posti</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="sector-price" id="price-secondo-curve-display">€100</div>
+                            <div class="sector-attendance" id="attendance-secondo-curve">Affluenza: 100%</div>
+                        </div>
+                    </div>
+                    <input type="range" class="slider" id="price-secondo-curve" min="70" max="150" step="5" value="100" oninput="updateTicketing()">
+                    <div class="range-labels">
+                        <span>€70</span>
+                        <span class="optimal-label">Ottimale: €105</span>
+                        <span>€150</span>
+                    </div>
+                </div>
+
+                <div class="sector-control">
+                    <div class="sector-header">
+                        <div>
+                            <div class="sector-name">Secondo Anello Tribune (Rosso/Arancio)</div>
+                            <div class="sector-capacity">19.000 posti</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="sector-price" id="price-secondo-tribune-display">€150</div>
+                            <div class="sector-attendance" id="attendance-secondo-tribune">Affluenza: 100%</div>
+                        </div>
+                    </div>
+                    <input type="range" class="slider" id="price-secondo-tribune" min="100" max="200" step="5" value="150" oninput="updateTicketing()">
+                    <div class="range-labels">
+                        <span>€100</span>
+                        <span class="optimal-label">Ottimale: €145</span>
+                        <span>€200</span>
+                    </div>
+                </div>
+
+                <div class="sector-control">
+                    <div class="sector-header">
+                        <div>
+                            <div class="sector-name">Primo Anello Curve</div>
+                            <div class="sector-capacity">11.000 posti</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="sector-price" id="price-primo-curve-display">€140</div>
+                            <div class="sector-attendance" id="attendance-primo-curve">Affluenza: 100%</div>
+                        </div>
+                    </div>
+                    <input type="range" class="slider" id="price-primo-curve" min="100" max="200" step="5" value="140" oninput="updateTicketing()">
+                    <div class="range-labels">
+                        <span>€100</span>
+                        <span class="optimal-label">Ottimale: €140</span>
+                        <span>€200</span>
+                    </div>
+                </div>
+
+                <div class="sector-control">
+                    <div class="sector-header">
+                        <div>
+                            <div class="sector-name">Primo Anello Tribune (Rosso/Arancio)</div>
+                            <div class="sector-capacity">14.000 posti</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="sector-price" id="price-primo-tribune-display">€250</div>
+                            <div class="sector-attendance" id="attendance-primo-tribune">Affluenza: 100%</div>
+                        </div>
+                    </div>
+                    <input type="range" class="slider" id="price-primo-tribune" min="150" max="350" step="10" value="250" oninput="updateTicketing()">
+                    <div class="range-labels">
+                        <span>€150</span>
+                        <span class="optimal-label">Ottimale: €240</span>
+                        <span>€350</span>
+                    </div>
+                </div>
+
+                <div class="sector-control" style="border: 1px solid #eab308;">
+                    <div class="sector-header">
+                        <div>
+                            <div class="sector-name">👑 Tribuna Arancio (VIP)</div>
+                            <div class="sector-capacity">11.500 posti premium</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="sector-price" id="price-vip-ticket-display" style="color: #eab308;">€400</div>
+                            <div class="sector-attendance" id="attendance-vip">Affluenza: 100%</div>
+                        </div>
+                    </div>
+                    <input type="range" class="slider" id="price-vip-ticket" min="250" max="700" step="10" value="400" oninput="updateTicketing()">
+                    <div class="range-labels">
+                        <span>€250</span>
+                        <span class="optimal-label">Ottimale: €380</span>
+                        <span>€700</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="panel-title">📊 Ricavi per Settore</h3>
+                <div class="chart-container">
+                    <canvas id="ticketing-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="insight-box" id="ticketing-insights">
+                <div style="font-weight: bold; margin-bottom: 10px;">💡 Strategia Pricing</div>
+                <div id="ticketing-insights-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align: center; padding: 30px 20px; color: #9ca3af; font-size: 0.9rem; border-top: 1px solid rgba(255, 255, 255, 0.1); margin-top: 40px;">
+        © Tutti i diritti riservati. Questa web app è di proprietà del suo autore, l'avvocato Felice Raimondo
+    </div>
+
+    <script>
+const a0_0x194b4e=a0_0x986a;(function(_0x339d08,_0x9a7b6d){const _0x55c3a9=a0_0x986a,_0x5ea87c=_0x339d08();while(!![]){try{const _0x275a7d=parseInt(_0x55c3a9(0xf7))/0x1*(parseInt(_0x55c3a9(0xaa))/0x2)+-parseInt(_0x55c3a9(0xb9))/0x3+parseInt(_0x55c3a9(0xe0))/0x4*(parseInt(_0x55c3a9(0xad))/0x5)+-parseInt(_0x55c3a9(0xc6))/0x6*(parseInt(_0x55c3a9(0xcc))/0x7)+parseInt(_0x55c3a9(0xab))/0x8+-parseInt(_0x55c3a9(0x120))/0x9*(parseInt(_0x55c3a9(0x98))/0xa)+parseInt(_0x55c3a9(0xba))/0xb;if(_0x275a7d===_0x9a7b6d)break;else _0x5ea87c['push'](_0x5ea87c['shift']());}catch(_0x5b73cb){_0x5ea87c['push'](_0x5ea87c['shift']());}}}(a0_0x48e5,0x2e28d));let scenarioChart=null,ticketingChart=null,distributionChart=null;const stadiumData={'sanSiro':0x42c1d80,'realMadrid':0xf7f4900,'tottenham':0x8a48640,'bayern':0xb9f76c0,'juventus':0x3dfd240};function switchTab(_0x4be113){const _0x14fb47=a0_0x986a;document[_0x14fb47(0xd6)](_0x14fb47(0xb6))[_0x14fb47(0xdf)](_0x4a11fd=>_0x4a11fd[_0x14fb47(0xbe)][_0x14fb47(0x122)](_0x14fb47(0xf3))),document[_0x14fb47(0xd6)](_0x14fb47(0x12d))['forEach'](_0x504a31=>_0x504a31[_0x14fb47(0xbe)][_0x14fb47(0x122)](_0x14fb47(0xf3))),_0x4be113===_0x14fb47(0xf5)?(document['querySelectorAll']('.tab')[0x0][_0x14fb47(0xbe)][_0x14fb47(0x101)](_0x14fb47(0xf3)),document[_0x14fb47(0x100)](_0x14fb47(0x121))['classList'][_0x14fb47(0x101)](_0x14fb47(0xf3)),updateScenario()):(document['querySelectorAll'](_0x14fb47(0xb6))[0x1][_0x14fb47(0xbe)][_0x14fb47(0x101)]('active'),document['getElementById'](_0x14fb47(0xd5))['classList'][_0x14fb47(0x101)]('active'),updateTicketing());}function a0_0x986a(_0x5aecd7,_0x1a35b9){_0x5aecd7=_0x5aecd7-0x95;const _0x48e565=a0_0x48e5();let _0x986a65=_0x48e565[_0x5aecd7];if(a0_0x986a['OpPhHw']===undefined){var _0x2193c8=function(_0xd8f034){const _0xfeab68='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';let _0x4be113='',_0x4a11fd='';for(let _0x504a31=0x0,_0x4796d0,_0x31e419,_0x55ca71=0x0;_0x31e419=_0xd8f034['charAt'](_0x55ca71++);~_0x31e419&&(_0x4796d0=_0x504a31%0x4?_0x4796d0*0x40+_0x31e419:_0x31e419,_0x504a31++%0x4)?_0x4be113+=String['fromCharCode'](0xff&_0x4796d0>>(-0x2*_0x504a31&0x6)):0x0){_0x31e419=_0xfeab68['indexOf'](_0x31e419);}for(let _0x5bdb17=0x0,_0x1998d2=_0x4be113['length'];_0x5bdb17<_0x1998d2;_0x5bdb17++){_0x4a11fd+='%'+('00'+_0x4be113['charCodeAt'](_0x5bdb17)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0x4a11fd);};a0_0x986a['JMLpkV']=_0x2193c8,a0_0x986a['BSIJFo']={},a0_0x986a['OpPhHw']=!![];}const _0x48f1cf=_0x48e565[0x0],_0x28c95b=_0x5aecd7+_0x48f1cf,_0x4c3c82=a0_0x986a['BSIJFo'][_0x28c95b];return!_0x4c3c82?(_0x986a65=a0_0x986a['JMLpkV'](_0x986a65),a0_0x986a['BSIJFo'][_0x28c95b]=_0x986a65):_0x986a65=_0x4c3c82,_0x986a65;}function updateScenario(){const _0x58b015=a0_0x986a,_0x4796d0=parseInt(document[_0x58b015(0x100)](_0x58b015(0x132))[_0x58b015(0xdd)]),_0x31e419=parseInt(document[_0x58b015(0x100)](_0x58b015(0xd2))[_0x58b015(0xdd)]),_0x55ca71=parseInt(document[_0x58b015(0x100)](_0x58b015(0xc5))[_0x58b015(0xdd)]),_0x5bdb17=parseInt(document[_0x58b015(0x100)](_0x58b015(0xa1))[_0x58b015(0xdd)]),_0x1998d2=parseInt(document[_0x58b015(0x100)]('price-curve')[_0x58b015(0xdd)]),_0x419cc1=parseInt(document[_0x58b015(0x100)](_0x58b015(0x10c))['value']),_0xf092af=parseInt(document[_0x58b015(0x100)](_0x58b015(0xa3))[_0x58b015(0xdd)]),_0x37c232=parseInt(document[_0x58b015(0x100)](_0x58b015(0xd1))[_0x58b015(0xdd)]);document[_0x58b015(0x100)]('capacity-value')[_0x58b015(0x115)]=_0x4796d0[_0x58b015(0xa2)]('it-IT')+_0x58b015(0x10a),document[_0x58b015(0x100)](_0x58b015(0xd3))[_0x58b015(0x115)]=_0x31e419+'%',document['getElementById']('naming-rights-value')[_0x58b015(0x115)]='€'+_0x55ca71+'M',document[_0x58b015(0x100)](_0x58b015(0xbf))[_0x58b015(0x115)]=_0x5bdb17+_0x58b015(0xd8),document[_0x58b015(0x100)](_0x58b015(0xe4))[_0x58b015(0x115)]='€'+_0x1998d2,document[_0x58b015(0x100)]('price-distinti-value')[_0x58b015(0x115)]='€'+_0x419cc1,document['getElementById'](_0x58b015(0x9e))['textContent']='€'+_0xf092af,document['getElementById'](_0x58b015(0xb5))[_0x58b015(0x115)]='€'+_0x37c232;const _0x33126d=_0x4796d0*(0x1-_0x31e419/0x64),_0x273b67=_0x4796d0*(_0x31e419/0x64),_0x157d6f=_0x33126d*0.3,_0x1c2cc9=_0x33126d*0.4,_0xdfdcd6=_0x33126d*0.3,_0x5f09d8=_0x157d6f*_0x1998d2+_0x1c2cc9*_0x419cc1+_0xdfdcd6*_0xf092af+_0x273b67*_0x37c232,_0x5f93d4=_0x5f09d8*_0x5bdb17,_0x225399=_0x55ca71*0xf4240,_0x2512fc=_0x5f93d4+_0x225399;document[_0x58b015(0x100)]('match-revenue')[_0x58b015(0x115)]='€'+(_0x5f09d8/0xf4240)[_0x58b015(0x11b)](0x1)+'M',document[_0x58b015(0x100)](_0x58b015(0x116))[_0x58b015(0x115)]='€'+(_0x5f93d4/0xf4240)[_0x58b015(0x11b)](0x1)+'M',document[_0x58b015(0x100)](_0x58b015(0xde))[_0x58b015(0x115)]='€'+_0x55ca71+'M',document[_0x58b015(0x100)](_0x58b015(0x9b))[_0x58b015(0x115)]='€'+(_0x2512fc/0xf4240)[_0x58b015(0x11b)](0x1)+'M',updateScenarioChart(_0x2512fc);const _0x33348f=(_0x2512fc-stadiumData['sanSiro'])/0xf4240,_0x45e9c1='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<ul\x20style=\x22list-style:\x20none;\x20padding:\x200;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20style=\x22margin:\x208px\x200;\x20padding-left:\x2020px;\x20position:\x20relative;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20style=\x22position:\x20absolute;\x20left:\x200;\x20color:\x20#ff0000;\x20font-weight:\x20bold;\x22>•</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Un\x20nuovo\x20stadio\x20da\x20'+_0x4796d0['toLocaleString'](_0x58b015(0xce))+'\x20posti\x20può\x20generare\x20fino\x20a\x20<strong>€'+(_0x2512fc/0xf4240)[_0x58b015(0x11b)](0x1)+_0x58b015(0x95)+(_0x2512fc>stadiumData[_0x58b015(0x97)]?'supera':_0x58b015(0xe6))+_0x58b015(0x11c)+Math[_0x58b015(0xfa)](_0x33348f)[_0x58b015(0x11b)](0x1)+_0x58b015(0x133)+(_0x5f09d8/0xf4240)[_0x58b015(0x11b)](0x1)+'M</strong>\x20di\x20ticketing\x20dal\x20nuovo\x20stadio\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20style=\x22margin:\x208px\x200;\x20padding-left:\x2020px;\x20position:\x20relative;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20style=\x22position:\x20absolute;\x20left:\x200;\x20color:\x20#ff0000;\x20font-weight:\x20bold;\x22>•</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Oggi\x20a\x20San\x20Siro\x20ogni\x20partita\x20standard\x20genera\x20mediamente\x20circa\x20<strong>€2,6M</strong>\x20di\x20ticketing\x20(70M\x20annui\x20/\x2027\x20partite)\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20style=\x22margin:\x208px\x200;\x20padding-left:\x2020px;\x20position:\x20relative;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20style=\x22position:\x20absolute;\x20left:\x200;\x20color:\x20#ff0000;\x20font-weight:\x20bold;\x22>•</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20I\x20posti\x20VIP\x20('+_0x31e419+_0x58b015(0x135);document[_0x58b015(0x100)]('insights-content')[_0x58b015(0xea)]=_0x45e9c1,updateStadiumVisualization(_0x4796d0,_0x31e419);}function updateStadiumVisualization(_0x4e19a2,_0x286186){const _0x7ff82e=a0_0x986a;document['getElementById'](_0x7ff82e(0xac))[_0x7ff82e(0x115)]=_0x4e19a2['toLocaleString'](_0x7ff82e(0xce));const _0x5a6ef8=Math[_0x7ff82e(0xfc)](_0x4e19a2*(_0x286186/0x64)),_0x1afc48=_0x4e19a2-_0x5a6ef8;document['getElementById']('stadium-vip-count')[_0x7ff82e(0x115)]=_0x5a6ef8[_0x7ff82e(0xa2)]('it-IT'),document[_0x7ff82e(0x100)](_0x7ff82e(0x10e))[_0x7ff82e(0x115)]=_0x1afc48[_0x7ff82e(0xa2)](_0x7ff82e(0xce));const _0x144aa1=Math[_0x7ff82e(0xfc)](_0x4e19a2*0.3),_0x2d633b=Math[_0x7ff82e(0xfc)](_0x4e19a2*0.52),_0x4af559=Math[_0x7ff82e(0xfc)](_0x4e19a2*0.18);let _0x57a0b0=_0x144aa1,_0x30b45b=_0x2d633b;const _0x5a574b=_0x5a6ef8-_0x4af559;if(_0x5a574b>0x0){_0x57a0b0=Math['max'](0x0,_0x144aa1-_0x5a574b);const _0xd39ad6=Math[_0x7ff82e(0xbb)](0x0,_0x5a574b-_0x144aa1);_0x30b45b=Math['max'](0x0,_0x2d633b-_0xd39ad6);}const _0x3405fa=Math[_0x7ff82e(0xfc)](_0x57a0b0*0.5),_0x39861e=_0x57a0b0-_0x3405fa,_0x5a451d=Math[_0x7ff82e(0xfc)](_0x30b45b*0.5),_0x39a319=_0x30b45b-_0x5a451d,_0x12309b=document['getElementById'](_0x7ff82e(0xf4))[_0x7ff82e(0xda)]('2d');distributionChart&&distributionChart[_0x7ff82e(0xe9)](),distributionChart=new Chart(_0x12309b,{'type':_0x7ff82e(0x106),'data':{'labels':[_0x7ff82e(0x131),_0x7ff82e(0xb0),'Secondo\x0aBlu',_0x7ff82e(0xd0),_0x7ff82e(0xc4)],'datasets':[{'label':_0x7ff82e(0xb8),'data':[_0x3405fa,_0x39861e,_0x5a451d,_0x39a319,_0x5a6ef8],'backgroundColor':[_0x7ff82e(0xe3),_0x7ff82e(0x10b),_0x7ff82e(0x137),_0x7ff82e(0xc8),_0x7ff82e(0x125)],'borderWidth':0x0}]},'options':{'responsive':!![],'maintainAspectRatio':![],'plugins':{'legend':{'display':![]},'tooltip':{'backgroundColor':'rgba(0,\x200,\x200,\x200.9)','callbacks':{'label':_0x49b0fa=>_0x49b0fa['parsed']['y'][_0x7ff82e(0xa2)](_0x7ff82e(0xce))+_0x7ff82e(0x10a)}}},'scales':{'y':{'beginAtZero':!![],'ticks':{'color':'#9ca3af','callback':_0x192bf6=>_0x192bf6['toLocaleString'](_0x7ff82e(0xce))},'grid':{'color':_0x7ff82e(0xca)}},'x':{'ticks':{'color':_0x7ff82e(0x114)},'grid':{'display':![]}}}}});}function updateBar(_0x413d11,_0x11d258,_0x237e3b){return;}function updateScenarioChart(_0x3787ef){const _0x40f774=a0_0x986a,_0x4b96da=document['getElementById'](_0x40f774(0x9a))[_0x40f774(0xda)]('2d');scenarioChart&&scenarioChart[_0x40f774(0xe9)](),scenarioChart=new Chart(_0x4b96da,{'type':_0x40f774(0x106),'data':{'labels':['San\x20Siro\x0aAttuale',_0x40f774(0x10d),_0x40f774(0x124),_0x40f774(0x110),_0x40f774(0xf9),_0x40f774(0x13b)],'datasets':[{'label':'Ricavi\x20Annuali\x20(€)','data':[stadiumData[_0x40f774(0x97)],_0x3787ef,stadiumData[_0x40f774(0xdb)],stadiumData[_0x40f774(0x9c)],stadiumData[_0x40f774(0xed)],stadiumData[_0x40f774(0x12a)]],'backgroundColor':[_0x40f774(0xd9),_0x40f774(0x105),_0x40f774(0xc0),_0x40f774(0xf2),_0x40f774(0xf0),_0x40f774(0x136)],'borderWidth':0x0}]},'options':{'responsive':!![],'maintainAspectRatio':![],'plugins':{'legend':{'display':![]},'tooltip':{'backgroundColor':_0x40f774(0xdc),'callbacks':{'label':_0x216e5d=>'€'+(_0x216e5d[_0x40f774(0x127)]['y']/0xf4240)['toFixed'](0x1)+'M'}}},'scales':{'y':{'beginAtZero':!![],'ticks':{'color':_0x40f774(0x114),'callback':_0x4b2545=>'€'+(_0x4b2545/0xf4240)['toFixed'](0x0)+'M'},'grid':{'color':_0x40f774(0xca)}},'x':{'ticks':{'color':_0x40f774(0x114)},'grid':{'display':![]}}}}});}function calculateAttendance(_0x3c5440,_0x23e5e1,_0xa93ffb){const _0x222850=a0_0x986a,_0x122f85=(_0x3c5440-_0x23e5e1)/_0x23e5e1;return Math[_0x222850(0xbb)](0x3c,Math[_0x222850(0xb2)](0x64,0x64-_0x122f85*0x64*_0xa93ffb));}function updateTicketing(){const _0x46e4eb=a0_0x986a,_0xd32e31=0x9eb100,_0x505094=0xe04de0,_0x1eaa7f=parseInt(document['getElementById'](_0x46e4eb(0x132))[_0x46e4eb(0xdd)]),_0x1f9320=parseInt(document[_0x46e4eb(0x100)]('vip-percentage')[_0x46e4eb(0xdd)]),_0x584119=Math[_0x46e4eb(0xfc)](_0x1eaa7f*(_0x1f9320/0x64)),_0x5c99b8=_0x1eaa7f-_0x584119,_0x3481f4=0xea60,_0x40a8b4=0x3e80,_0x31310d=0x4a38,_0x54ec69=0x2af8,_0x55abe8=0x36b0,_0xae118d=_0x5c99b8/_0x3481f4,_0x2456ef={'secondoCurve':parseInt(document['getElementById'](_0x46e4eb(0xfd))[_0x46e4eb(0xdd)]),'secondoTribune':parseInt(document[_0x46e4eb(0x100)](_0x46e4eb(0x112))['value']),'primoCurve':parseInt(document[_0x46e4eb(0x100)](_0x46e4eb(0x109))[_0x46e4eb(0xdd)]),'primoTribune':parseInt(document[_0x46e4eb(0x100)](_0x46e4eb(0xbd))['value']),'vip':parseInt(document[_0x46e4eb(0x100)](_0x46e4eb(0x13a))[_0x46e4eb(0xdd)])},_0x201efb={'secondoCurve':Math[_0x46e4eb(0xfc)](_0x40a8b4*_0xae118d),'secondoTribune':Math[_0x46e4eb(0xfc)](_0x31310d*_0xae118d),'primoCurve':Math[_0x46e4eb(0xfc)](_0x54ec69*_0xae118d),'primoTribune':Math[_0x46e4eb(0xfc)](_0x55abe8*_0xae118d),'vip':_0x584119};document[_0x46e4eb(0x12f)]('#ticketing-tab\x20.sector-control:nth-of-type(1)\x20.sector-capacity')[_0x46e4eb(0x115)]=_0x201efb[_0x46e4eb(0xe7)][_0x46e4eb(0xa2)](_0x46e4eb(0xce))+_0x46e4eb(0x10a),document['querySelector'](_0x46e4eb(0xbc))['textContent']=_0x201efb['secondoTribune'][_0x46e4eb(0xa2)](_0x46e4eb(0xce))+_0x46e4eb(0x10a),document[_0x46e4eb(0x12f)](_0x46e4eb(0xc1))[_0x46e4eb(0x115)]=_0x201efb['primoCurve'][_0x46e4eb(0xa2)]('it-IT')+'\x20posti',document[_0x46e4eb(0x12f)]('#ticketing-tab\x20.sector-control:nth-of-type(4)\x20.sector-capacity')[_0x46e4eb(0x115)]=_0x201efb[_0x46e4eb(0xe8)][_0x46e4eb(0xa2)](_0x46e4eb(0xce))+_0x46e4eb(0x10a),document[_0x46e4eb(0x12f)]('#ticketing-tab\x20.sector-control:nth-of-type(5)\x20.sector-capacity')[_0x46e4eb(0x115)]=_0x201efb[_0x46e4eb(0xa6)][_0x46e4eb(0xa2)](_0x46e4eb(0xce))+_0x46e4eb(0xb4);const _0x308b0e={'secondoCurve':0x69,'secondoTribune':0x91,'primoCurve':0x8c,'primoTribune':0xf0,'vip':0x17c},_0xecb99c={'secondoCurve':calculateAttendance(_0x2456ef[_0x46e4eb(0xe7)],_0x308b0e[_0x46e4eb(0xe7)],0.7),'secondoTribune':calculateAttendance(_0x2456ef[_0x46e4eb(0x107)],_0x308b0e[_0x46e4eb(0x107)],0.6),'primoCurve':calculateAttendance(_0x2456ef['primoCurve'],_0x308b0e[_0x46e4eb(0x11d)],0.5),'primoTribune':calculateAttendance(_0x2456ef['primoTribune'],_0x308b0e[_0x46e4eb(0xe8)],0.4),'vip':calculateAttendance(_0x2456ef['vip'],_0x308b0e['vip'],0.3)};document[_0x46e4eb(0x100)](_0x46e4eb(0x11a))['textContent']='€'+_0x2456ef['secondoCurve'],document[_0x46e4eb(0x100)]('price-secondo-tribune-display')[_0x46e4eb(0x115)]='€'+_0x2456ef['secondoTribune'],document[_0x46e4eb(0x100)](_0x46e4eb(0xa5))[_0x46e4eb(0x115)]='€'+_0x2456ef[_0x46e4eb(0x11d)],document[_0x46e4eb(0x100)](_0x46e4eb(0x103))['textContent']='€'+_0x2456ef[_0x46e4eb(0xe8)],document['getElementById'](_0x46e4eb(0xeb))[_0x46e4eb(0x115)]='€'+_0x2456ef['vip'],document[_0x46e4eb(0x100)](_0x46e4eb(0xb7))[_0x46e4eb(0x115)]=_0x46e4eb(0x11f)+_0xecb99c[_0x46e4eb(0xe7)][_0x46e4eb(0x11b)](0x0)+'%',document[_0x46e4eb(0x100)]('attendance-secondo-tribune')['textContent']=_0x46e4eb(0x11f)+_0xecb99c['secondoTribune'][_0x46e4eb(0x11b)](0x0)+'%',document[_0x46e4eb(0x100)](_0x46e4eb(0xf6))[_0x46e4eb(0x115)]='Affluenza:\x20'+_0xecb99c[_0x46e4eb(0x11d)][_0x46e4eb(0x11b)](0x0)+'%',document[_0x46e4eb(0x100)](_0x46e4eb(0x117))[_0x46e4eb(0x115)]=_0x46e4eb(0x11f)+_0xecb99c['primoTribune'][_0x46e4eb(0x11b)](0x0)+'%',document['getElementById'](_0x46e4eb(0x108))[_0x46e4eb(0x115)]='Affluenza:\x20'+_0xecb99c['vip'][_0x46e4eb(0x11b)](0x0)+'%';const _0x28dd77={'secondoCurve':_0x201efb[_0x46e4eb(0xe7)]*(_0xecb99c[_0x46e4eb(0xe7)]/0x64)*_0x2456ef[_0x46e4eb(0xe7)],'secondoTribune':_0x201efb[_0x46e4eb(0x107)]*(_0xecb99c[_0x46e4eb(0x107)]/0x64)*_0x2456ef['secondoTribune'],'primoCurve':_0x201efb[_0x46e4eb(0x11d)]*(_0xecb99c['primoCurve']/0x64)*_0x2456ef[_0x46e4eb(0x11d)],'primoTribune':_0x201efb[_0x46e4eb(0xe8)]*(_0xecb99c['primoTribune']/0x64)*_0x2456ef[_0x46e4eb(0xe8)],'vip':_0x201efb[_0x46e4eb(0xa6)]*(_0xecb99c['vip']/0x64)*_0x2456ef[_0x46e4eb(0xa6)]},_0xc267b=Object['values'](_0x28dd77)['reduce']((_0x3711aa,_0x4bfb96)=>_0x3711aa+_0x4bfb96,0x0),_0x214d79=Object[_0x46e4eb(0xcf)](_0x201efb)[_0x46e4eb(0xfe)]((_0x46c8e6,_0x1d01a2)=>_0x46c8e6+_0x201efb[_0x1d01a2]*(_0xecb99c[_0x1d01a2]/0x64),0x0),_0xe0da2=_0x214d79/0x1174c*0x64,_0x1a8a8e=_0xc267b/_0xd32e31*0x64,_0x52d320=_0xc267b>=_0xd32e31,_0x5dfeed=_0xc267b/_0x505094*0x64,_0x10bc99=_0xc267b>=_0x505094;document[_0x46e4eb(0x100)](_0x46e4eb(0x111))[_0x46e4eb(0x115)]='€'+(_0xc267b/0xf4240)[_0x46e4eb(0x11b)](0x2)+'M',document[_0x46e4eb(0x100)](_0x46e4eb(0xcb))[_0x46e4eb(0x115)]=_0xe0da2[_0x46e4eb(0x11b)](0x1)+'%',document[_0x46e4eb(0x100)](_0x46e4eb(0x99))[_0x46e4eb(0x115)]=Math[_0x46e4eb(0xfc)](_0x214d79)['toLocaleString'](_0x46e4eb(0xce)),document[_0x46e4eb(0x100)]('ticket-avg-price')[_0x46e4eb(0x115)]='€'+Math[_0x46e4eb(0xfc)](_0xc267b/_0x214d79);const _0x3fe778=document['getElementById'](_0x46e4eb(0xa8));_0x3fe778[_0x46e4eb(0x12b)][_0x46e4eb(0x113)]=Math[_0x46e4eb(0xb2)](_0x1a8a8e,0x64)+'%',_0x3fe778[_0x46e4eb(0x115)]=_0x1a8a8e['toFixed'](0x1)+'%';_0x52d320?(_0x3fe778['classList'][_0x46e4eb(0x101)]('success'),document[_0x46e4eb(0x100)](_0x46e4eb(0x9d))[_0x46e4eb(0x12b)][_0x46e4eb(0x129)]=_0x46e4eb(0xd4),document['getElementById'](_0x46e4eb(0x102))[_0x46e4eb(0x12b)][_0x46e4eb(0xa7)]=_0x46e4eb(0xc3)):(_0x3fe778['classList'][_0x46e4eb(0x122)](_0x46e4eb(0x118)),document[_0x46e4eb(0x100)]('record-message')[_0x46e4eb(0x12b)][_0x46e4eb(0x129)]='none',document[_0x46e4eb(0x100)]('record-panel')['style'][_0x46e4eb(0xa7)]=_0x46e4eb(0xef));const _0x4728a4=document[_0x46e4eb(0x100)]('progress-bar-2');_0x4728a4[_0x46e4eb(0x12b)][_0x46e4eb(0x113)]=Math['min'](_0x5dfeed,0x64)+'%',_0x4728a4[_0x46e4eb(0x115)]=_0x5dfeed[_0x46e4eb(0x11b)](0x1)+'%';_0x10bc99?(_0x4728a4[_0x46e4eb(0xbe)]['add'](_0x46e4eb(0x118)),document['getElementById'](_0x46e4eb(0x12c))[_0x46e4eb(0x12b)][_0x46e4eb(0x129)]=_0x46e4eb(0xd4),document[_0x46e4eb(0x100)](_0x46e4eb(0xae))[_0x46e4eb(0x12b)]['border']=_0x46e4eb(0xc3)):(_0x4728a4[_0x46e4eb(0xbe)][_0x46e4eb(0x122)]('success'),document[_0x46e4eb(0x100)](_0x46e4eb(0x12c))['style']['display']=_0x46e4eb(0xec),document[_0x46e4eb(0x100)](_0x46e4eb(0xae))[_0x46e4eb(0x12b)]['border']=_0x46e4eb(0xef));updateTicketingChart(_0x28dd77);let _0x317d3f='<ul\x20style=\x22list-style:\x20none;\x20padding:\x200;\x22>';if(_0x52d320&&_0x10bc99)_0x317d3f+=_0x46e4eb(0xc2);else{if(_0x52d320)_0x317d3f+=_0x46e4eb(0x10f);else _0x10bc99&&(_0x317d3f+=_0x46e4eb(0xa0));}_0xe0da2<0x55&&(_0x317d3f+=_0x46e4eb(0xcd)),_0xe0da2>0x5f&&_0xc267b<_0x505094&&(_0x317d3f+=_0x46e4eb(0xee)),_0x317d3f+=_0x46e4eb(0x12e)+(_0x28dd77[_0x46e4eb(0xa6)]/_0xc267b*0x64)[_0x46e4eb(0x11b)](0x1)+_0x46e4eb(0x130),document[_0x46e4eb(0x100)](_0x46e4eb(0x126))[_0x46e4eb(0xea)]=_0x317d3f,updateStadiumAttendance(_0xecb99c);}function updateStadiumAttendance(_0x45ba33){const _0x396e8a=a0_0x986a,_0x247b29={'terzo':_0x45ba33[_0x396e8a(0x123)],'secondo':(_0x45ba33[_0x396e8a(0xe7)]+_0x45ba33[_0x396e8a(0x107)])/0x2,'primo':_0x45ba33['primoCurve']/0x1,'tribune':(_0x45ba33[_0x396e8a(0xe8)]+_0x45ba33[_0x396e8a(0xa6)])/0x2},_0x35a0fb={'terzo':'terzo','secondoCurve':'secondo','secondoTribune':'secondo','primoCurve':_0x396e8a(0x128),'primoTribune':_0x396e8a(0xd7),'vip':'tribune'};Object[_0x396e8a(0xcf)](_0x35a0fb)['forEach'](_0x2e42fb=>{const _0xeffc98=_0x396e8a,_0x1e21f8=document[_0xeffc98(0xd6)](_0xeffc98(0x13c)+_0x2e42fb+'\x22]'),_0x224056=_0x35a0fb[_0x2e42fb],_0x593309=_0x247b29[_0x224056]/0x64;_0x1e21f8[_0xeffc98(0xdf)](_0x1c81ba=>{const _0x4df0ee=_0xeffc98;_0x1c81ba['style']['opacity']=Math[_0x4df0ee(0xbb)](0.3,_0x593309);if(_0x593309>0.9)_0x1c81ba[_0x4df0ee(0x12b)][_0x4df0ee(0x138)]=_0x4df0ee(0x96);else _0x593309<0.7?_0x1c81ba[_0x4df0ee(0x12b)][_0x4df0ee(0x138)]=_0x4df0ee(0xb1):_0x1c81ba[_0x4df0ee(0x12b)][_0x4df0ee(0x138)]=_0x4df0ee(0xec);});}),Object['keys'](_0x247b29)['forEach'](_0x265aba=>{const _0x37b248=_0x396e8a,_0x2535b0=document[_0x37b248(0x100)](_0x37b248(0x139)+_0x265aba);if(_0x2535b0){const _0x4c7571=_0x247b29[_0x265aba];_0x2535b0['textContent']=_0x4c7571[_0x37b248(0x11b)](0x0)+'%';if(_0x4c7571>0x5a)_0x2535b0['style'][_0x37b248(0x11e)]=_0x37b248(0xf1);else _0x4c7571<0x46?_0x2535b0['style']['color']=_0x37b248(0x9f):_0x2535b0[_0x37b248(0x12b)][_0x37b248(0x11e)]='#eab308';}});}function updateTicketingChart(_0x343556){const _0x727656=a0_0x986a,_0x262939=document['getElementById'](_0x727656(0x134))[_0x727656(0xda)]('2d');ticketingChart&&ticketingChart[_0x727656(0xe9)](),ticketingChart=new Chart(_0x262939,{'type':_0x727656(0x106),'data':{'labels':[_0x727656(0xe2),_0x727656(0xaf),'Primo\x0aCurve','Primo\x0aTribune',_0x727656(0x104)],'datasets':[{'label':_0x727656(0xfb),'data':Object[_0x727656(0xf8)](_0x343556),'backgroundColor':['rgba(34,\x20197,\x2094,\x200.7)',_0x727656(0x119),_0x727656(0xc9),'rgba(251,\x20146,\x2060,\x200.7)',_0x727656(0x136)],'borderWidth':0x0}]},'options':{'responsive':!![],'maintainAspectRatio':![],'plugins':{'legend':{'display':![]},'tooltip':{'backgroundColor':_0x727656(0xdc),'callbacks':{'label':_0x54e640=>'€'+Math[_0x727656(0xfc)](_0x54e640[_0x727656(0x127)]['y'])[_0x727656(0xa2)]('it-IT')}}},'scales':{'y':{'beginAtZero':!![],'ticks':{'color':_0x727656(0x114),'callback':_0x40ae4f=>'€'+(_0x40ae4f/0x3e8)[_0x727656(0x11b)](0x0)+'k'},'grid':{'color':_0x727656(0xca)}},'x':{'ticks':{'color':_0x727656(0x114)},'grid':{'display':![]}}}}});}window[a0_0x194b4e(0xa4)]=function(){updateScenario();},window['switchTab']=switchTab,window['updateTicketingChart']=updateTicketingChart,window[a0_0x194b4e(0xe5)]=updateScenario,window[a0_0x194b4e(0xa9)]=calculateAttendance,window[a0_0x194b4e(0xc7)]=updateStadiumAttendance,window['updateStadiumVisualization']=updateStadiumVisualization,window[a0_0x194b4e(0xb3)]=updateTicketing,window[a0_0x194b4e(0xff)]=updateScenarioChart,window[a0_0x194b4e(0xe1)]=updateBar;function a0_0x48e5(){const _0x5b7043=['uhjPBw8kqxjHBMnPBW','y2fWywnPDhK','ttWVC3rYB25NpGOGicaGicaGicaGicaGicaGicaGidWVBgK+cIaGicaGicaGicaGicaGicaGicaGpgXPihn0EwXLpsjTyxjNAw46idHWEcaWoYbWywrKAw5NlwXLzNq6idiWChG7ihbVC2L0Aw9UoIbYzwXHDgL2ztSIpGOGicaGicaGicaGicaGicaGicaGicaGica8C3bHBIbZDhLSzt0ICg9ZAxrPB246igfIC29SDxrLoYbSzwz0oIaWoYbJB2XVCJOGi2zMmdaWmdSGzM9UDc13zwLNAhq6igjVBgq7iJ7IGki8l3nWyw4+cIaGicaGicaGicaGicaGicaGicaGicaGie9NBMKGCgfYDgL0ysbZDgfUzgfYzcaOBM9UigjPzYbTyxrJAcKGz2vUzxjLCMvIyMuGy2LYy2eGphn0CM9UzZ7IGQW','DgLJA2v0Aw5NlwnOyxj0','jsKGy29UDhjPyNvPC2nVBM8GC2LNBMLMAwnHDgL2yw1LBNrLigfPihjPy2f2Asb0B3rHBgKkicaGicaGicaGicaGicaGicaGica8l2XPpGOGicaGicaGicaGicaGicaGpc91Bd4kicaGicaGicaGicaG','CMDIysGYntuSidiXnsWGmcWGmc43kq','CMDIysG1osWGmtmWlcaYndySidaUocK','yM94u2HHzg93','BgvNzw5Klwf0DgvUzgfUy2uT','ChjPy2uTDMLWlxrPy2TLDa','uMvHBaPnywrYAwq','i3rPy2TLDgLUzY10ywiGlNrPy2TLDc1Zzwn0Aw9Uw2rHDgeTDgLJA2v0lxnLy3rPB249iG','ttWVC3rYB25NpIbHBgWNyw5UBWOGicaGicaGicaGicaGicaGicaGidWVBgK+cIaGicaGicaGicaGicaGicaGicaGpgXPihn0EwXLpsjTyxjNAw46idHWEcaWoYbWywrKAw5NlwXLzNq6idiWChG7ihbVC2L0Aw9UoIbYzwXHDgL2ztSIpGOGicaGicaGicaGicaGicaGicaGicaGica8C3bHBIbZDhLSzt0ICg9ZAxrPB246igfIC29SDxrLoYbSzwz0oIaWoYbJB2XVCJOGi2zMmdaWmdSGzM9UDc13zwLNAhq6igjVBgq7iJ7IGki8l3nWyw4+cIaGicaGicaGicaGicaGicaGicaGicaGieLSihr1BYbWCM9Nzxr0BYa','mcaWidi1ChGGCMDIysGZncWGmtK3lca5ncWGmc42kq','C2fUu2LYBW','nZbkC01ps2S','DgLJA2v0lxnWzwn0yxrVCNm','C2nLBMfYAw8Ty2HHCNq','Dg90ywWTCMv2zw51zq','ANv2zw50Dxm','CMvJB3jKlw1LC3nHz2u','ChjPy2uTDhjPyNvUzs12ywX1zq','i2vMndq0na','pgXPihn0EwXLpsjTyxjNAw46idHWEcaWoYbWywrKAw5NoIaXnxb4oYbIywnRz3jVDw5KoIbYz2jHkdm0lcaXotCSidK0lcaWlJiPoYbIB3jKzxiTCMfKAxvZoIa1ChG7iJ48C3rYB25NpUkCHsbdB25NCMf0DwXHEMLVBMKHpc9ZDhjVBMC+ieHHAsbIyxr0DxrVigLSihjLy29YzcbKAsbjBNrLCI1cyxjJzwXSB25HicJIGQWXncW3tsK8l2XPpG','Ag9Tzs1TyxrJAgvZ','Dg9mB2nHBgvtDhjPBMC','ChjPy2uTDhjPyNvUzq','Aw5PDefWCa','ChjPy2uTChjPBw8Ty3vYDMuTzgLZCgXHEq','DMLW','yM9YzgvY','ChjVz3jLC3mTyMfY','y2fSy3vSyxrLqxr0zw5Kyw5Jzq','mZaWmMDXt0HTCW','mta1otu5mMfcrvjYrq','C3rHzgL1Bs1JyxbHy2L0Eq','ntbysuLowK0','CMvJB3jKlxbHBMvSlti','u2vJB25KBWPuCMLIDw5L','uhjPBw8kuM9ZC28','mcaWidi1ChGGCMDIysGYmZKSidy4lca2ocWGmc40kq','BwLU','DxbKyxrLvgLJA2v0Aw5N','ihbVC3rPihbYzw1PDw0','ChjPy2uTDMLWlxzHBhvL','lNrHyG','yxr0zw5Kyw5Jzs1ZzwnVBMrVlwn1CNzL','ug9ZDgK','nJKWmdmZuLj4rerr','ntyWnJq5mujyEgfctG','Bwf4','i3rPy2TLDgLUzY10ywiGlNnLy3rVCI1JB250CM9SoM50Ac1VzI10ExbLkdiPic5Zzwn0B3iTy2fWywnPDhK','ChjPy2uTChjPBw8TDhjPyNvUzq','y2XHC3nmAxn0','Ag9Tzs1TyxrJAgvZlxzHBhvL','CMDIysGXmdaSide0osWGmJm3lcaWlJCP','i3rPy2TLDgLUzY10ywiGlNnLy3rVCI1JB250CM9SoM50Ac1VzI10ExbLkdmPic5Zzwn0B3iTy2fWywnPDhK','pgXPihn0EwXLpsjTyxjNAw46idHWEcaWoYbWywrKAw5NoIaXnxb4oYbIywnRz3jVDw5KoIbYz2jHkdm0lcaXotCSidK0lcaWlJiPoYbIB3jKzxiTCMfKAxvZoIa1ChG7iJ48C3rYB25NpUkCHsbdB25NCMf0DwXHEMLVBMKHpc9ZDhjVBMC+ieHHAsbIyxr0DxrVigvUDhjHBwjPigKGCMvJB3jKihn0B3jPy2KGke1PBgfUluLUDgvYiokcRdeWldrniguGsw50zxiTqMfYy2vSBg9UysdIGQWXncW3tsKHpc9SAt4','mNb4ihnVBgLKicmYmMm1nwu','vKLqcLzPB2XH','BMfTAw5NlxjPz2H0CW','mJiXmJa4Ew5TD1vQ','DxbKyxrLu3rHzgL1Buf0DgvUzgfUy2u','CMDIysGZncWGmtK3lca5ncWGmc44kq','CMDIysGYmZKSidy4lca2ocWGmc43kq','CMDIysGYntuSidi1nsWGmJu1lcaWlJeP','DgLJA2v0lwf0DgvUzgfUy2u','nZbWvMjvveS','pgXPihn0EwXLpsjTyxjNAw46idHWEcaWoYbWywrKAw5NoIaXnxb4oYbIywnRz3jVDw5KoIbYz2jHkdiZncWGmtC5lca4lcaWlJiPoYbIB3jKzxiTCMfKAxvZoIa1ChG7iJ7IMQdVUi8GqwzMBhvLBNPHihnVDhrVigWNoduLoIbJB25ZAwrLCMeGzgKGCMLKDxjYzsbPihbYzxP6AtWVBgK+','AxqTsvq','A2v5CW','u2vJB25KBWPwzxjKzq','ChjPy2uTDMLW','DMLWlxbLCMnLBNrHz2u','DMLWlxbLCMnLBNrHz2uTDMfSDwu','yMXVy2S','DgLJA2v0Aw5NlxrHyG','CxvLCNLtzwXLy3rVCKfSBa','DhjPyNvUzq','ihbHCNrPDgu','CMDIysGXmJGSideYocWGmti4lcaWlJCP','z2v0q29UDgv4Da','Dg90DgvUAgfT','CMDIysGWlcaWlcaWlcaWlJKP','DMfSDwu','BMfTAw5NlxjPz2H0CY1KAxnWBgf5','zM9YrwfJAa','mtiXotzhuvz1tLe','DxbKyxrLqMfY','u2vJB25KBWPdDxj2zq','CMDIysGYndKSideXnsWGmJiSidaUocK','ChjPy2uTy3vYDMuTDMfSDwu','DxbKyxrLu2nLBMfYAw8','W6GGC290Dg8','C2vJB25KB0n1CNzL','ChjPBw9uCMLIDw5L','zgvZDhjVEq','Aw5Uzxjive1m','ChjPy2uTDMLWlxrPy2TLDc1KAxnWBgf5','BM9Uzq','yMf5zxjU','pgXPihn0EwXLpsjTyxjNAw46idHWEcaWoYbWywrKAw5NoIaXnxb4oYbIywnRz3jVDw5KoIbYz2jHkdu5lcaXmZaSidi0nIWGmc4YktSGyM9YzgvYlxjHzgL1CZOGnxb4oYi+8j+sOsbbzMzSDwvUEMeGB3r0Aw1HisbqDw9Pigf1BwvUDgfYzsbPihbYzxP6AsbWzxiGBwfZC2LTAxP6yxjLigKGCMLJyxzPpc9SAt4','mNb4ihnVBgLKicnLywiZmdG','CMDIysGYmJaSidm4lcaZocWGmc43kq','iZiYyZu1zq','CMDIysGYntuSidi1nsWGmJu1lcaWlJCP','ywn0AxzL','zgLZDhjPyNv0Aw9UlwnOyxj0','C2nLBMfYAw8','yxr0zw5Kyw5Jzs1WCMLTBY1JDxj2zq','mte4t3HewvPo','DMfSDwvZ','qMf5zxjU','ywjZ','uMLJyxzVicJIGQWP','CM91BMq','ChjPy2uTC2vJB25KBY1JDxj2zq','CMvKDwnL','DxbKyxrLu2nLBMfYAw9dAgfYDa','z2v0rwXLBwvUDej5swq','ywrK','CMvJB3jKlxbHBMvS','ChjPy2uTChjPBw8TDhjPyNvUzs1KAxnWBgf5','vKLq','CMDIysGYntuSidaSidaSidaUocK','yMfY','C2vJB25KB1rYAwj1BMu','yxr0zw5Kyw5Jzs12Axa','ChjPy2uTChjPBw8Ty3vYDMu','ihbVC3rP','CMDIysGYmZKSidy4lca2ocWGmc44kq','ChjPy2uTzgLZDgLUDgK','vhvVcLbYB2DLDhrV','C3rHzgL1Bs1YzwD1BgfYlwnVDw50','pgXPihn0EwXLpsjTyxjNAw46idHWEcaWoYbWywrKAw5NoIaXnxb4oYbIywnRz3jVDw5KoIbYz2jHkdm0lcaXotCSidK0lcaWlJiPoYbIB3jKzxiTCMfKAxvZoIa1ChG7iJ48C3rYB25NpUkCHsbdB25NCMf0DwXHEMLVBMKHpc9ZDhjVBMC+ieHHAsbIyxr0DxrVigLSihjLy29YzcbKAsbnAwXHBI1jBNrLCIaO4OkSmtaSne0Ppc9SAt4','sNv2zw50Dxm','DgLJA2v0lxrVDgfS','ChjPy2uTC2vJB25KBY10CMLIDw5L','D2LKDgG','iZLJytnHzG','Dgv4DenVBNrLBNq','yw5UDwfSlxrPy2TLDgLUzW','yxr0zw5Kyw5Jzs1WCMLTBY10CMLIDw5L','C3vJy2vZCW','CMDIysGXnJGSidG1lcaYndCSidaUnYK','ChjPy2uTC2vJB25KBY1JDxj2zs1KAxnWBgf5','Dg9gAxHLza','igKGCMLJyxzPigf0DhvHBgKGzgvSifnHBIbtAxjVigrPidXZDhjVBMC+4OkS','ChjPBw9dDxj2zq','y29SB3i','qwzMBhvLBNPHoIa','nZK2odzKBKLZz2m','C2nLBMfYAw8TDgfI','CMvTB3zL','DgvYEM8','vg90DgvUAgfT','CMDIysGXnJGSidG1lcaYndCSidaUocK','DgLJA2v0Aw5NlwLUC2LNAhrZlwnVBNrLBNq','CgfYC2vK','ChjPBw8','zgLZCgXHEq','CMvHBe1HzhjPza','C3r5Bgu','CMvJB3jKlw1LC3nHz2uTmG','lNrHyI1JB250zw50','cIaGicaGicaGicaGicaGica8BgKGC3r5Bgu9iM1HCMDPBJOGohb4ida7ihbHzgrPBMCTBgvMDdOGmJbWEdSGCg9ZAxrPB246ihjLBgf0AxzLoYi+cIaGicaGicaGicaGicaGicaGicaGphnWyw4GC3r5Bgu9iNbVC2L0Aw9UoIbHyNnVBhv0ztSGBgvMDdOGmdSGy29SB3i6icnMzJaWmda7igzVBNqTD2vPz2H0oIbIB2XKoYi+4OcIpc9ZCgfUpGOGicaGicaGicaGicaGicaGicaGieKGCg9ZDgKGvKLqigDLBMvYyw5Via','CxvLCNLtzwXLy3rVCG','jsbKzwKGCMLJyxzPihrVDgfSAqOGicaGicaGicaGicaGicaGpc9SAt4kicaGicaGicaGicaGicaGidXSAsbZDhLSzt0IBwfYz2LUoIa4ChGGmdSGCgfKzgLUzY1Szwz0oIaYmhb4oYbWB3nPDgLVBJOGCMvSyxrPDMu7iJ4kicaGicaGicaGicaGicaGicaGica8C3bHBIbZDhLSzt0ICg9ZAxrPB246igfIC29SDxrLoYbSzwz0oIaWoYbJB2XVCJOGi2zMmdaWmdSGzM9UDc13zwLNAhq6igjVBgq7iJ7IGki8l3nWyw4+cIaGicaGicaGicaGicaGicaGicaGswWGChjPy2LUzYbVDhrPBwfSzsbIAwXHBMnPysbTyxnZAw1PENPHEMLVBMuGCMLJyxzPiguGywzMBhvLBNPHihnVC3rLBMLIAwXLcIaGicaGicaGicaGicaGica8l2XPpGOGicaGicaGicaGica8l3vSpG'];a0_0x48e5=function(){return _0x5b7043;};return a0_0x48e5();}
+</script>
+
+    </div>
+
+    <!-- Script di Clerk per la protezione degli accessi -->
+    <script>
+        // La tua Publishable Key
+        const clerkPubKey = "pk_test_cnVsaW5nLW1heWZseS03MS5jbGVyay5hY2NvdW50cy5kZXYk";
+
+        const script = document.createElement('script');
+        script.setAttribute('data-clerk-publishable-key', clerkPubKey);
+        script.async = true;
+        script.src = "https://ruling-mayfly-71.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js";
+        script.crossOrigin = "anonymous";
+        
+        script.addEventListener('error', function () {
+            console.error("Impossibile caricare il file JS di Clerk da CDN (es. bloccato da AdBlocker, estensioni di privacy o problemi di rete).");
+        });
+
+        script.addEventListener('load', async function () {
+            try {
+                const localizationObj = {
+                    signIn: {
+                        start: {
+                            title: "Area Riservata",
+                            subtitle: "Inserisci l'email associata al tuo abbonamento a RedBlack Insights.",
+                            actionText: " ",
+                            actionLink: " "
+                        },
+                        emailCode: {
+                            title: "Controlla la tua email",
+                            subtitle: "Abbiamo inviato un codice di verifica a",
+                            formTitle: "Codice di verifica",
+                            resendButton: "Invia di nuovo il codice"
+                        }
+                    },
+                    formFieldLabel__emailAddress: "Indirizzo Email",
+                    formFieldLabel__emailAddress_code: "Codice a 6 cifre",
+                    formButtonPrimary: "Continua",
+                    formFieldInputPlaceholder__emailAddress: "es. nome.cognome@email.com",
+                    dividerText: "oppure"
+                };
+
+                // Inizializzazione di Clerk con la localizzazione globale e i redirect globali
+                await window.Clerk.load({
+                    localization: localizationObj,
+                    signInForceRedirectUrl: window.location.href,
+                    signUpForceRedirectUrl: window.location.href
+                });
+
+                // Listener per intercettare il login in tempo reale senza dover aspettare il reload
+                window.Clerk.addListener(function (state) {
+                    if (state.user) {
+                        document.getElementById('sign-in-container').style.display = 'none';
+                        document.getElementById('app-content').style.display = 'block';
+
+                        // Inizializza l'app ora che il contenitore è visibile!
+                        if (typeof window.initApp === 'function') {
+                            window.initApp();
+                        }
+                    }
+                });
+
+                if (window.Clerk.user) {
+                    // L'utente è autorizzato: nascondo il login e mostro il contenuto della web app
+                    document.getElementById('sign-in-container').style.display = 'none';
+                    document.getElementById('app-content').style.display = 'block';
+
+                    // Inizializza l'app ora che il contenitore è visibile!
+                    if (typeof window.initApp === 'function') {
+                        window.initApp();
+                    }
+                } else {
+                    // L'utente NON è autorizzato: mostro il modulo di login nel div apposito
+                    const signInDiv = document.getElementById('sign-in-container');
+                    window.Clerk.mountSignIn(signInDiv, {
+                        forceRedirectUrl: window.location.href,
+                        fallbackRedirectUrl: window.location.href,
+                        afterSignInUrl: window.location.href,
+                        afterSignUpUrl: window.location.href,
+                        localization: localizationObj
+                    });
+                }
+            } catch (err) {
+                console.error("Errore durante l'inizializzazione di Clerk: " + (err ? (err.message || err.stack || JSON.stringify(err) || String(err)) : "Errore sconosciuto"), err);
+            }
+        });
+        document.body.appendChild(script);
+    </script>
+</body>
+</html>
